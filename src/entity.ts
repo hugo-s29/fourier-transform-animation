@@ -1,0 +1,95 @@
+import { mat2d, vec2 } from 'gl-matrix'
+
+class Entity<SVGElementType extends SVGElement> {
+  public domElement: SVGElementType
+  public transformationMatrix: mat2d
+
+  constructor(domElement: SVGElementType) {
+    this.domElement = domElement
+    this.transformationMatrix = mat2d.create()
+    this.scale([1, -1])
+  }
+
+  public update() {
+    this.domElement.style.transform = mat2d.str(this.transformationMatrix).replace('mat2d', 'matrix')
+  }
+
+  public add(...e: Entity<any>[]) {
+    e.forEach((entity) => entity.update())
+
+    this.domElement.append(...e.map((line) => line.domElement))
+  }
+
+  //* Angle in radians
+  public rotate(angle: number) {
+    mat2d.rotate(this.transformationMatrix, this.transformationMatrix, angle)
+    this.update()
+    return this
+  }
+
+  public translate([x, y]: [number, number]) {
+    const v = vec2.fromValues(x, y)
+    mat2d.translate(this.transformationMatrix, this.transformationMatrix, v)
+    this.update()
+    return this
+  }
+
+  public scale(k: number | [number, number]) {
+    const [x, y] = Array.isArray(k) ? k : [k, k]
+    const v = vec2.fromValues(x, y)
+    mat2d.scale(this.transformationMatrix, this.transformationMatrix, v)
+    this.update()
+    return this
+  }
+}
+
+export class Polygon extends Entity<SVGPathElement> {
+  public points: [number, number][]
+  protected reverse: boolean
+
+  constructor(points: [number, number][], reverse: boolean = false) {
+    super(document.createElementNS('http://www.w3.org/2000/svg', 'path'))
+    this.points = points
+    this.reverse = reverse
+    this.generatePathFromPoints()
+    this.setStroke('white', 1)
+  }
+
+  protected generatePathFromPoints() {
+    let path = ''
+
+    let i = 0
+    for (const [x, y] of this.points) {
+      const command = i === 0 ? 'M' : 'L'
+
+      path += `${command} ${x} ${y} `
+
+      i++
+    }
+
+    if (this.reverse) for (const [x, y] of this.points.reverse()) path += `L ${x} ${y} `
+
+    path += 'Z'
+
+    this.domElement.setAttribute('d', path)
+  }
+
+  public setStroke(color: string, width: number) {
+    this.domElement.style.stroke = color
+    this.domElement.style.strokeWidth = (width / 15).toString()
+    return this
+  }
+
+  public setFill(color: string) {
+    this.domElement.style.fill = color
+    return this
+  }
+}
+
+export class Group extends Entity<SVGGElement> {
+  constructor() {
+    super(document.createElementNS('http://www.w3.org/2000/svg', 'g'))
+  }
+}
+
+export default Entity
