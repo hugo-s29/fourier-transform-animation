@@ -2,6 +2,7 @@ import Color from './colors'
 import { Display } from './display'
 import Entity, { Polygon } from './entity'
 import { Triangle, Line } from './geometry'
+import Label from './label'
 import { map, range } from './util'
 
 class Graph extends Entity<SVGGElement> {
@@ -43,7 +44,12 @@ class Graph extends Entity<SVGGElement> {
     return [this.getXAxis(), this.getYAxis()]
   }
 
-  protected getXAxis(maintick: number = 1, pad: number = 0.3) {
+  protected getXAxis(
+    maintick: number = 1,
+    pad: number = 0.2,
+    tickLabel: boolean = true,
+    labelFunc: (i: number) => string | null = (i) => i.toString()
+  ) {
     const [tickWidth] = this.tickWidth
     const [smalltickWidth] = this.smalltickWidth
 
@@ -51,7 +57,8 @@ class Graph extends Entity<SVGGElement> {
     line.setStroke(this.color, 0.4)
 
     const ticks: Line[] = []
-    for (const i of range(this.ticksCount[0])) {
+    const labels: Label[] = []
+    for (const i of range(this.ticksCount[0] + 1)) {
       const x = map(i, 0, this.ticksCount[0], -this.width / 2, this.width / 2)
       const y = 0
       const _tickWidth = i % maintick === 0 ? tickWidth : smalltickWidth
@@ -60,15 +67,28 @@ class Graph extends Entity<SVGGElement> {
       const tick = new Line(ptA, ptB)
       tick.setStroke(this.color, 0.4)
       ticks.push(tick)
+
+      if (tickLabel && i % maintick === 0) {
+        const text = labelFunc(i)
+        if (!text) continue
+
+        const label = new Label(text)
+        label.label.scale([1, -1])
+        label
+          .scale([0.5, -0.5])
+          .translate([x * 2, y + _tickWidth / 2 + 0.75])
+          .mathFont()
+        labels.push(label)
+      }
     }
 
-    const arrow = new Triangle(0.5, [this.width / 2, 0])
+    const arrow = new Triangle(0.5, [this.width / 2 + 0.05, 0])
       .scale([0.7, this.arrowWidth])
       .setStroke('none', 0)
       .setFill(this.color)
 
     const axis = new Entity<SVGGElement>(document.createElementNS('http://www.w3.org/2000/svg', 'g'))
-    axis.add(...ticks, line, arrow)
+    axis.add(...ticks, ...labels, line, arrow)
     return axis
   }
 
@@ -83,7 +103,12 @@ class Graph extends Entity<SVGGElement> {
     return { x, y }
   }
 
-  protected getYAxis(maintick: number = 1, pad: number = 0.3) {
+  protected getYAxis(
+    maintick: number = 1,
+    pad: number = 0.2,
+    tickLabel: boolean = true,
+    labelFunc: (i: number) => string | null = (i) => i.toString()
+  ) {
     const [, tickWidth] = this.tickWidth
     const [, smalltickWidth] = this.smalltickWidth
 
@@ -91,7 +116,9 @@ class Graph extends Entity<SVGGElement> {
     line.setStroke(this.color, 0.4)
 
     const ticks: Line[] = []
-    for (const i of range(this.ticksCount[1])) {
+    const labels: Label[] = []
+
+    for (const i of range(this.ticksCount[1] + 1)) {
       const x = 0
       const y = map(i, 0, this.ticksCount[1], -this.height / 2, this.height / 2)
       const _tickWidth = i % maintick === 0 ? tickWidth : smalltickWidth
@@ -100,21 +127,34 @@ class Graph extends Entity<SVGGElement> {
       const tick = new Line(ptA, ptB)
       tick.setStroke(this.color, 0.4)
       ticks.push(tick)
+
+      if (tickLabel && i % maintick === 0) {
+        const text = labelFunc(i)
+        if (!text) continue
+
+        const label = new Label(text)
+        label.label.scale([1, -1])
+        label
+          .scale([0.5, -0.5])
+          .translate([x - _tickWidth / 2 - 1.2, 2 * y + 0.25])
+          .mathFont()
+        labels.push(label)
+      }
     }
 
-    const arrow = new Triangle(0.5, [0, this.height / 2])
+    const arrow = new Triangle(0.5, [0, this.height / 2 + 0.05])
       .rotate(Math.PI / 2)
       .scale([0.7, this.arrowWidth])
       .setStroke('none', 0)
       .setFill(this.color)
 
     const axis = new Entity<SVGGElement>(document.createElementNS('http://www.w3.org/2000/svg', 'g'))
-    axis.add(...ticks, line, arrow)
+    axis.add(...ticks, ...labels, line, arrow)
     return axis
   }
 }
 
-export class ParametrixFunctionGraph extends Polygon {
+export class ParametricFunctionGraph extends Polygon {
   constructor(func: (t: number) => [number, number], [tMin, tMax]: [number, number] = [0, 1], tInc: number = 0.01) {
     const points: [number, number][] = []
     for (let t = tMin; t < tMax; t += tInc) {
@@ -166,7 +206,7 @@ export class ParametrixFunctionGraph extends Polygon {
   }
 }
 
-export class FunctionGraph extends ParametrixFunctionGraph {
+export class FunctionGraph extends ParametricFunctionGraph {
   xRange: [number, number]
   xInc: number
   func: (x: number) => number

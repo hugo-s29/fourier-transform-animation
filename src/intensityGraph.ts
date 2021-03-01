@@ -2,22 +2,24 @@ import Color from './colors'
 import { Display } from './display'
 import { Line } from './geometry'
 import Graph, { FunctionGraph } from './graph'
+import Label from './label'
 import { map } from './util'
 
 class IntensityGraph extends Graph {
-  public intensities: number[]
+  //                   frequency, intensity
+  public intensities: [number, number][]
   public graph: FunctionGraph
   static ticksCountX = 18
   // bars: Line[]
 
-  constructor(intensities: number[]) {
+  constructor(intensities: [number, number][]) {
     const ticksCountX = IntensityGraph.ticksCountX
 
     super([ticksCountX, 3], [0.4, 0.2], [0.2, 0.2], Display.width * 0.9, Display.height * (1 / 5))
 
     this.intensities = intensities
 
-    const [xAxis, yAxis] = [this.getXAxis(4), this.getYAxis()]
+    const [xAxis, yAxis] = [this.getXAxis(4, 0.2, true, (i) => (i / 4).toString()), this.getYAxis(1, 0.2, false)]
     this.add(xAxis, yAxis)
     this.axis = [xAxis, yAxis]
 
@@ -32,11 +34,29 @@ class IntensityGraph extends Graph {
     this.graph = graph
 
     this.add(graph)
+
+    const timeLabel = new Label('Time')
+    const intensityLabel = new Label('Intensity')
+
+    timeLabel.scale([0.7, -0.7]).translate([5, -0.8])
+    intensityLabel.scale([0.7, -0.7]).translate([-9.5, 2.5])
+
+    this.add(timeLabel)
+    this.add(intensityLabel)
+
     // this.bars = []
     // this.createBar(0)
     // this.createBar(0)
     // this.createBar(0)
     // this.createBar(0)
+  }
+
+  public updateValues() {
+    this.graph.regeneratePoints((x) => this.getValue(x), [0, IntensityGraph.ticksCountX], 0.01)
+    this.graph.mapInRectangle({
+      x: [-this.width / 2, this.width / 2],
+      y: [0, -this.height * 0.8],
+    })
   }
 
   // public createBar(x: number) {
@@ -57,8 +77,8 @@ class IntensityGraph extends Graph {
   public getValue(x: number) {
     let y = 0
 
-    for (const intensity of this.intensities) {
-      y += Math.cos((intensity * x * Math.PI) / 2)
+    for (const [frequency, intensity] of this.intensities) {
+      y += Math.cos((frequency * x * Math.PI) / 2) * intensity
     }
 
     return y

@@ -14,10 +14,14 @@ class Entity<SVGElementType extends SVGElement> {
     this.domElement.style.transform = mat2d.str(this.transformationMatrix).replace('mat2d', 'matrix')
   }
 
+  public postUpdate() {}
+
   public add(...e: Entity<any>[]) {
     e.forEach((entity) => entity.update())
 
     this.domElement.append(...e.map((line) => line.domElement))
+
+    e.forEach((entity) => entity.postUpdate())
   }
 
   //* Angle in radians
@@ -39,6 +43,26 @@ class Entity<SVGElementType extends SVGElement> {
     const v = vec2.fromValues(x, y)
     mat2d.scale(this.transformationMatrix, this.transformationMatrix, v)
     this.update()
+    return this
+  }
+
+  public setStroke(color: string, width: number, dashArray?: number, dashOffset?: number) {
+    this.domElement.style.stroke = color
+    this.domElement.style.strokeWidth = (width / 15).toString()
+
+    if (dashArray !== undefined) this.domElement.style.strokeDasharray = dashArray.toString()
+    if (dashOffset !== undefined) this.domElement.style.strokeDashoffset = dashOffset.toString()
+
+    return this
+  }
+
+  public setFill(color: string) {
+    this.domElement.style.fill = color
+    return this
+  }
+
+  public setOpacity(opacity: number) {
+    this.domElement.style.opacity = opacity.toString()
     return this
   }
 }
@@ -72,17 +96,6 @@ export class Polygon extends Entity<SVGPathElement> {
     path += 'Z'
 
     this.domElement.setAttribute('d', path)
-  }
-
-  public setStroke(color: string, width: number) {
-    this.domElement.style.stroke = color
-    this.domElement.style.strokeWidth = (width / 15).toString()
-    return this
-  }
-
-  public setFill(color: string) {
-    this.domElement.style.fill = color
-    return this
   }
 }
 

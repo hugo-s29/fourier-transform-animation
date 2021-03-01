@@ -1,14 +1,14 @@
 import Color from './colors'
 import { Group } from './entity'
 import { Circle, Line } from './geometry'
-import { ParametrixFunctionGraph } from './graph'
+import { ParametricFunctionGraph } from './graph'
 import IntensityGraph from './intensityGraph'
 import { map, range, round } from './util'
 
 export default class PolarGraph extends Group {
   intensityGraph: IntensityGraph
   windingFreq: number
-  polar: ParametrixFunctionGraph
+  polar: ParametricFunctionGraph
   massCenterPos: [number, number]
   massCenter: Circle
 
@@ -23,7 +23,7 @@ export default class PolarGraph extends Group {
 
     this.windingFreq = 0
 
-    const polar = new ParametrixFunctionGraph(
+    const polar = new ParametricFunctionGraph(
       this.polarizeFunction(func, this.windingFreq, 0.75 ** intensityGraph.intensities.length),
       [0, IntensityGraph.ticksCountX],
       0.01
@@ -36,7 +36,9 @@ export default class PolarGraph extends Group {
 
     this.massCenterPos = pos
 
-    this.add(polar, massCenter)
+    const dashedCircle = new Circle(1.42).setFill('none').setStroke(Color.WHITE, 0.4, 0.1, 0.01)
+
+    this.add(polar, massCenter, dashedCircle)
   }
 
   updateValues() {
@@ -75,7 +77,7 @@ export default class PolarGraph extends Group {
 
     return (t: number) => {
       const x = t / 2
-      const y = map(func(t), minMax[0], minMax[1], 0, 1.5)
+      const y = map(func(t), minMax[0], minMax[1], 0, 2)
 
       const angle = x * windingFreq * Math.PI
       const u = Math.cos(angle) * y * scale

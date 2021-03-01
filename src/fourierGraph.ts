@@ -4,6 +4,7 @@ import { Group } from './entity'
 import { Circle, Rectangle } from './geometry'
 import Graph, { FunctionGraph } from './graph'
 import IntensityGraph from './intensityGraph'
+import Label from './label'
 import PolarGraph from './polarGraph'
 import { map } from './util'
 
@@ -16,13 +17,19 @@ export default class FourierGraph extends Graph {
   allPoints: [number, number][]
   dot: Circle
   dotPos: [number, number]
+  g: Group // group containing the graph and the point
 
   constructor(intensityGraph: IntensityGraph) {
     const ticksCountX = FourierGraph.ticksCountX
 
-    super([ticksCountX, 4], [0.2, 0.2], [0.2, 0.2], Display.width * (3 / 5), PolarGraph.size[1] * 0.8, Color.GREEN)
+    super([ticksCountX, 4], [0.2, 0.2], [0.2, 0.2], Display.width * (2.8 / 5), PolarGraph.size[1] * 0.8, Color.GREEN)
 
-    const [xAxis, yAxis] = [this.getXAxis(), this.getYAxis(1, 0)]
+    const negativeFormat = (n: number) => (n >= 0 ? ' ' + n.toFixed(1) : n.toFixed(1))
+
+    const [xAxis, yAxis] = [
+      this.getXAxis(1, 0.2, true, (i) => (i === 0 ? null : i.toString())),
+      this.getYAxis(1, 0, true, (i) => negativeFormat(map(i, 4, 0, -1, 1))),
+    ]
     this.add(xAxis, yAxis)
     this.axis = [xAxis, yAxis]
 
@@ -31,7 +38,9 @@ export default class FourierGraph extends Graph {
 
     this.intensityGraph = intensityGraph
 
-    const graph = new FunctionGraph(this.getValue(), [0, ticksCountX * 1.9], 0.025).setStroke(Color.RED, 0.5)
+    const graph = new FunctionGraph(this.getValue(intensityGraph), [0, ticksCountX * 2], 0.025)
+      .setStroke(Color.RED, 0.5)
+      .scale([0.89, 1])
     this.graph = graph
 
     const g = new Group()
@@ -41,10 +50,12 @@ export default class FourierGraph extends Graph {
     this.dotPos = pos
 
     g.add(graph)
-    // g.add(this.dot)
+    g.add(this.dot)
     g.scale([1, 1]).translate([-this.width / 2, -this.height / 2])
 
-    const surroundingRectangle = new Rectangle(this.width * 1.08, this.height * 1.1)
+    this.g = g
+
+    const surroundingRectangle = new Rectangle(this.width * 1.18, this.height * 1.1)
       .translate([-this.width * 0.01, (-this.height * 1.05) / 2])
       .setFill('none')
       .setStroke(Color.GREEN, 0.5)
@@ -52,10 +63,19 @@ export default class FourierGraph extends Graph {
     this.add(surroundingRectangle)
 
     this.add(g)
+
+    const label = new Label('Frequency')
+    label.label.scale([1, -1])
+    label.scale(0.6).translate([5, -2.5])
+    this.add(label)
+  }
+
+  public updateValues() {
+    this.graph.regeneratePoints(this.getValue(this.intensityGraph), [0, FourierGraph.ticksCountX * 2], 0.025)
   }
 
   public moveDot(x: number) {
-    const y = this.graph.func(x)
+    const y = this.graph.func(x / 0.89)
     const dx = x - this.dotPos[0]
     const dy = y - this.dotPos[1]
 
@@ -63,9 +83,10 @@ export default class FourierGraph extends Graph {
     this.dotPos = [x, y]
   }
 
-  private getValue() {
-    const { intensityGraph } = this
+  private getValue(intensityGraph: IntensityGraph) {
     const func = intensityGraph.getValue.bind(intensityGraph) as (x: number) => number
+
+    console.log(intensityGraph.intensities)
     const minMax = intensityGraph.graph.getMinMaxY()
     const points: [number, number][] = []
 
@@ -75,7 +96,7 @@ export default class FourierGraph extends Graph {
       const mean: [number, number] = [0, 0]
 
       for (const [x, y] of points) {
-        const angle = (x * windingFreq * Math.PI) / 3.85
+        const angle = (x * windingFreq * Math.PI) / 4
         const u = Math.cos(angle) * y
         const v = Math.sin(angle) * y
 

@@ -1,43 +1,54 @@
 import FourierGraph from './fourierGraph'
-import { round } from './util'
 
 export default class TimeSlider {
-  static range: [number, number] = [0, 5]
+  static range: [number, number] = [0, (FourierGraph.ticksCountX * 2.05) / 2]
 
   running: boolean
   advancement: number
   wasRunning: boolean
-  sliderElement: HTMLInputElement
+  restartButton: HTMLButtonElement
   pauseButton: HTMLButtonElement
 
-  constructor() {
+  controls: HTMLDivElement
+
+  constructor(controlBox: HTMLDivElement) {
     this.running = true
     this.wasRunning = true
     this.advancement = 0
 
-    this.sliderElement = document.createElement('input')
-    this.sliderElement.setAttribute('type', 'range')
-    this.sliderElement.setAttribute('min', TimeSlider.range[0].toString())
-    this.sliderElement.setAttribute('max', TimeSlider.range[1].toString())
-    this.sliderElement.setAttribute('step', 'any')
-    this.sliderElement.setAttribute('value', this.advancement.toString())
-
-    this.sliderElement.addEventListener('input', (e) => {
-      this.advancement = +this.sliderElement.value
+    this.restartButton = document.createElement('button')
+    this.restartButton.innerHTML = '<i class="fas fa-redo"></i>'
+    this.restartButton.addEventListener('click', () => {
+      this.restartAnimation()
     })
+    this.restartButton.classList.add('round-btn')
 
     this.pauseButton = document.createElement('button')
     this.onchange()
     this.pauseButton.addEventListener('click', () => {
       this.toggle()
     })
+    this.pauseButton.classList.add('round-btn')
 
-    document.body.appendChild(this.sliderElement)
-    document.body.appendChild(this.pauseButton)
+    const controls = document.createElement('div')
+    controls.classList.add('controls')
+
+    controls.appendChild(this.restartButton)
+    controls.appendChild(this.pauseButton)
+
+    this.controls = controls
+
+    controlBox.appendChild(controls)
   }
 
   private onchange() {
-    this.pauseButton.innerHTML = this.running ? '⏸︎' : '⏵︎'
+    this.pauseButton.innerHTML = this.running ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>'
+  }
+
+  restartAnimation() {
+    this.advancement = 0
+    this.play()
+    this.onchange()
   }
 
   pause() {
@@ -45,24 +56,21 @@ export default class TimeSlider {
     this.onchange()
   }
 
-  continue() {
+  play() {
     this.running = true
     this.onchange()
   }
 
   toggle() {
-    if (this.advancement >= TimeSlider.range[1]) {
-      this.advancement = 0
-      this.sliderElement.setAttribute('value', this.advancement.toString())
-    }
+    if (this.advancement >= TimeSlider.range[1]) this.advancement = 0
 
     this.running = !this.running
     this.onchange()
   }
 
   advance(dt: number) {
-    const dx = round(0.0001 * dt, 3)
+    const dx = 0.002
+    // const dx = round(0.0001 * dt, 3)
     this.advancement += dx
-    this.sliderElement.setAttribute('value', this.advancement.toString())
   }
 }

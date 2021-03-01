@@ -23,6 +23,7 @@ export class Display {
   public add<T extends SVGElement>(e: Entity<T>) {
     e.update()
     this.svg.appendChild(e.domElement)
+    e.postUpdate()
   }
 
   public animate(cb: (dt: number) => any) {
