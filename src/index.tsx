@@ -1,11 +1,20 @@
-import React, { FC } from 'react'
+import React, { FC, useState } from 'react'
 import ReactDOM from 'react-dom'
+import IntensityGraph from './intensityGraph'
 
-export const App: FC = () => (
-  <>
-    <h1>Hello World</h1>
-  </>
-)
+export const App: FC = () => {
+  // eslint-disable-next-line
+  const [frequencies, setFrequences] = useState<[number, number][]>([
+    [2, 1],
+    [3, 1],
+  ])
+
+  return (
+    <>
+      <IntensityGraph frequencies={frequencies} />
+    </>
+  )
+}
 
 ReactDOM.render(
   <React.StrictMode>
