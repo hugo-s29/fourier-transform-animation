@@ -1,0 +1,13 @@
+{
+  "name": "fourier-transform",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "graphize-v2": "../"
+  },
+  "devDependencies": {
+    "parcel-bundler": "^1.12.5",
+    "typescript": "^4.2.4"
+  }
+}
